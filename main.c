@@ -10,6 +10,8 @@ int main() {
   char *line = NULL;
   size_t len = 0; // initial len -> will increase while typing
   ssize_t nread;
+  char *args[64];
+  char *token;
 
   while (true) {
     printf("myshell> ");
@@ -21,15 +23,37 @@ int main() {
       break;
     }
 
-    if (nread > 0 && line[nread - 1] == '\n') {
+    if (nread > 0 && line[nread - 1] == '\n')
       line[nread - 1] = '\0';
-    }
+
+    if (line[0] == '\0')
+      continue;
 
     if (strcmp(line, "exit") == 0) {
       break;
     }
 
-    // write future code here
+    int i = 0;
+    token = strtok(line, " ");
+    while (token != NULL) {
+      args[i] = token;
+      i++;
+      token = strtok(NULL, " "); // passing NULL as 1st arg to tell strtok to
+                                 // take the previous var
+    }
+
+    args[i] =
+        NULL; // set the last char as NULL so that execvp stops reading there
+    pid_t pid = fork();
+    if (pid == 0) { // child
+      execvp(args[0], args);
+      perror("Error");
+      exit(1);
+    } else if (pid > 0) { // parent
+      waitpid(pid, NULL, 0);
+    } else {
+      perror("Fork failed");
+    }
   }
   free(line);
   return 0;
