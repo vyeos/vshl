@@ -44,15 +44,30 @@ int main() {
 
     args[i] =
         NULL; // set the last char as NULL so that execvp stops reading there
-    pid_t pid = fork();
-    if (pid == 0) { // child
-      execvp(args[0], args);
-      perror("Error");
-      exit(1);
-    } else if (pid > 0) { // parent
-      waitpid(pid, NULL, 0);
+
+    if (strcmp(args[0], "cd") == 0) {
+      char *home = getenv("HOME");
+      char *t_dir = NULL;
+      if (args[1] == NULL || strcmp(args[1], "~") == 0) {
+        t_dir = home;
+      } else {
+        t_dir = args[1];
+      }
+      int result = chdir(t_dir);
+      if (result == -1) {
+        perror("cd failed");
+      }
     } else {
-      perror("Fork failed");
+      pid_t pid = fork();
+      if (pid == 0) { // child
+        execvp(args[0], args);
+        perror("Error");
+        exit(1);
+      } else if (pid > 0) { // parent
+        waitpid(pid, NULL, 0);
+      } else {
+        perror("Fork failed");
+      }
     }
   }
   free(line);
