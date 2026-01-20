@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h> // mem alloc
 #include <string.h>
+#include <sys/_types/_pid_t.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h> // fork, exec, pid_t
@@ -45,19 +46,59 @@ int main() {
     args[i] =
         NULL; // set the last char as NULL so that execvp stops reading there
 
-    if (strcmp(args[0], "cd") == 0) {
-      char *home = getenv("HOME");
-      char *t_dir = NULL;
-      if (args[1] == NULL || strcmp(args[1], "~") == 0) {
-        t_dir = home;
-      } else {
-        t_dir = args[1];
+    char **args1 = args; // head
+    char **args2 = NULL; // tail
+
+    for (int j = 0; args[j] != NULL; j++) {
+      if (strcmp(args[j], "|") == 0) {
+        args[j] = NULL;
+        args2 = &args[j + 1];
+        break;
       }
-      int result = chdir(t_dir);
-      if (result == -1) {
-        perror("cd failed");
+    }
+
+    if (args2 != NULL) { // pipeline found
+      int pipefd[2];     // pipefd[0] read, pipefd[1] write
+      if (pipe(pipefd) == -1) {
+        perror("Pipe failed");
+        continue;
       }
+
+      pid_t pid1 = fork();
+      if (pid1 == 0) {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO); // replace stdout with write end
+        close(pipefd[1]);
+        execvp(args1[0], args1);
+        perror("exec 1 failed");
+        exit(1);
+      }
+
+      pid_t pid2 = fork();
+      if (pid2 == 0) {
+        close(pipefd[1]);
+        dup2(pipefd[0], STDIN_FILENO); // replace stdin with read
+        close(pipefd[0]);
+        execvp(args2[0], args2);
+        perror("exec 2 failed");
+        exit(1);
+      }
+
+      close(pipefd[0]);
+      close(pipefd[1]);
+      waitpid(pid1, NULL, 0);
+      waitpid(pid2, NULL, 0);
     } else {
+
+      if (strcmp(args[0], "cd") == 0) {
+        char *t_dir = args[1];
+        if (!t_dir)
+          t_dir = getenv("HOME");
+        if (chdir(t_dir) == -1)
+          perror("cd failed");
+        continue;
+      }
+
       pid_t pid = fork();
       if (pid == 0) { // child
         execvp(args[0], args);
@@ -70,6 +111,7 @@ int main() {
       }
     }
   }
+
   free(line);
   return 0;
 }

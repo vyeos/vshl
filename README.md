@@ -1,9 +1,10 @@
 # New TODO
 
 [-] working cd
-[ ] pipelines
+[-] pipelines
 [ ] redirection
 [ ] bg jobs
 [ ] alias
 [ ] startup config
 [ ] history 
+[ ] /../.. in cd
