@@ -4,11 +4,34 @@
 
 void parse_line(char *line, char **args) {
   int i = 0;
-  char *token = strtok(line, " ");
-  while (token != NULL) {
-    args[i] = token;
-    i++;
-    token = strtok(NULL, " ");
+  int pos = 0;
+  char *current_token = line;
+  int in_quotes = 0;
+  int token_start = 1;
+
+  while (line[pos] != '\0') {
+    if (line[pos] == '"') {
+      in_quotes = !in_quotes;
+      memmove(&line[pos], &line[pos + 1], strlen(&line[pos + 1]) + 1);
+      continue;
+    }
+    if (line[pos] == ' ' && !in_quotes) {
+      line[pos] = '\0';
+      if (!token_start) {
+        args[i++] = current_token;
+        token_start = 1;
+      }
+    } else {
+      if (token_start) {
+        current_token = &line[pos];
+        token_start = 0;
+      }
+    }
+    pos++;
+  }
+
+  if (!token_start) {
+    args[i++] = current_token;
   }
   args[i] = NULL;
 }
