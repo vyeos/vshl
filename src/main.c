@@ -6,6 +6,7 @@
 #include "parser.h"
 #include "shell.h"
 #include "utils.h"
+#include "globbing.h"
 
 int main() {
   char *line = NULL;
@@ -45,9 +46,17 @@ int main() {
       continue;
     }
 
-    int status = new_shell(args);
+    int status = 0;
+    char **expanded_args = expand_globs(args);
+    if (expanded_args) {
+        status = new_shell(expanded_args);
+        free_expanded_args(expanded_args);
+    } else {
+        status = new_shell(args);
+    }
+    
     if (status == -1) {
-      break; // Exit requested by builtin
+       break; 
     }
   }
 
