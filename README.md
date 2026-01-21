@@ -2,7 +2,7 @@
 
 [-] working cd
 [-] pipelines
-[ ] redirection (>, >>, < 2>)
+[-] redirection (>, >>, < 2>)
 [ ] logic chaining (;, ||, &&)
 [ ] quoting (git commit -m "git commit" -> git and commit will go difeerently)
 [ ] escaping (make \ work -> escape characters)
@@ -18,3 +18,18 @@
 [ ] autocorrect commands
 [ ] trash (when running rm -rf, move the file/folder to .trash or somewhere and manage that using shell -> can be brought back by undo)
 [ ] native zoxide
+
+## fs
+
+include
+ - builtins.h
+ - executor.h
+ - parser.h
+ - shell.h
+src
+ - builtins.c
+ - executor.c
+ - parser.c
+ - shell.c
+
+Makefile
