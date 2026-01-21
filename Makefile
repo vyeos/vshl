@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Iinclude
-SRC = src/main.c src/parsers.c src/builtins.c src/executors.c
+SRC = src/main.c src/parsers.c src/builtins.c src/executors.c src/utils.c
 OBJ = $(SRC:.c=.o)
 TARGET = vshl
 
