@@ -1,3 +1,7 @@
+# Flow
+
+Input -> Check for logic chains -> Split on them -> builtins (if possible) -> split on pipeline or redirection
+
 # New TODO
 
 [-] working cd

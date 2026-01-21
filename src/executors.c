@@ -1,25 +1,88 @@
-#include "executor.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-void execute_command(char **args) {
+#include "builtins.h"
+#include "executor.h"
+#include "parser.h"
+
+// Helper to execute a single logical unit (command or pipeline)
+int run_command_unit(char **args) {
+    if (args[0] == NULL) return 0;
+
+    int builtin_status = handle_builtin(args);
+    if (builtin_status == -1) return -1; // exit shell
+    if (builtin_status == 1) return 0;   // success (builtin executed)
+
+    char **args1 = NULL;
+    char **args2 = NULL;
+    int method = check_method_and_split(args, &args1, &args2);
+
+    switch (method) {
+        case 0: return execute_command(args);
+        case 1: return execute_pipeline(args1, args2);
+        case 2: return execute_redirection(args1, args2, 2); // >
+        case 3: return execute_redirection(args1, args2, 3); // >>
+        case 4: return execute_redirection(args1, args2, 4); // <
+        case 5: return execute_redirection(args1, args2, 5); // 2>
+        default:
+            printf("Unknown method\n");
+            return 1;
+    }
+}
+
+// Recursive function to handle &&, ||, ;
+int run_logic_chain(char **args) {
+    if (args[0] == NULL) return 0;
+
+    int i = 0;
+    while (args[i] != NULL) {
+        if (strcmp(args[i], "&&") == 0) {
+            args[i] = NULL;
+            int status = run_command_unit(args);
+            if (status == 0) {
+                return run_logic_chain(&args[i + 1]);
+            }
+            return status;
+        } else if (strcmp(args[i], "||") == 0) {
+            args[i] = NULL;
+            int status = run_command_unit(args);
+            if (status != 0) {
+                return run_logic_chain(&args[i + 1]);
+            }
+            return status;
+        } else if (strcmp(args[i], ";") == 0) {
+            args[i] = NULL;
+            run_command_unit(args);
+            return run_logic_chain(&args[i + 1]);
+        }
+        i++;
+    }
+
+    return run_command_unit(args);
+}
+
+int execute_command(char **args) {
   pid_t pid = fork();
   if (pid == 0) { // child
     execvp(args[0], args);
     perror("Error");
     exit(1);
   } else if (pid > 0) { // parent
-    waitpid(pid, NULL, 0);
+    int status;
+    waitpid(pid, &status, 0);
+    return WEXITSTATUS(status);
   } else {
     perror("Fork failed");
+    return 1;
   }
 }
 
-void execute_redirection(char **args1, char **args2, int mode) {
+int execute_redirection(char **args1, char **args2, int mode) {
   pid_t pid = fork();
   if (pid == 0) { // child process
     int fd = -1;
@@ -60,17 +123,20 @@ void execute_redirection(char **args1, char **args2, int mode) {
     perror("Exec failed");
     exit(1);
   } else if (pid > 0) {
-    waitpid(pid, NULL, 0);
+    int status;
+    waitpid(pid, &status, 0);
+    return WEXITSTATUS(status);
   } else {
     perror("Fork failed");
+    return 1;
   }
 }
 
-void execute_pipeline(char **args1, char **args2) {
+int execute_pipeline(char **args1, char **args2) {
   int pipefd[2]; // pipefd[0] read, pipefd[1] write
   if (pipe(pipefd) == -1) {
     perror("Pipe failed");
-    return;
+    return 1;
   }
 
   pid_t pid1 = fork();
@@ -95,6 +161,8 @@ void execute_pipeline(char **args1, char **args2) {
 
   close(pipefd[0]);
   close(pipefd[1]);
-  waitpid(pid1, NULL, 0);
-  waitpid(pid2, NULL, 0);
+  int status1, status2;
+  waitpid(pid1, &status1, 0);
+  waitpid(pid2, &status2, 0);
+  return WEXITSTATUS(status2); // Return status of the last command in pipeline
 }
