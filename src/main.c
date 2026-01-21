@@ -3,9 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "builtins.h"
-#include "executor.h"
 #include "parser.h"
+#include "shell.h"
 #include "utils.h"
 
 int main() {
@@ -46,7 +45,7 @@ int main() {
       continue;
     }
 
-    int status = run_logic_chain(args);
+    int status = new_shell(args);
     if (status == -1) {
       break; // Exit requested by builtin
     }

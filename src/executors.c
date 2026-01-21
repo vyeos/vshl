@@ -10,60 +10,37 @@
 #include "executor.h"
 #include "parser.h"
 
-// Helper to execute a single logical unit (command or pipeline)
 int run_command_unit(char **args) {
-    if (args[0] == NULL) return 0;
+  if (args[0] == NULL)
+    return 0;
 
-    int builtin_status = handle_builtin(args);
-    if (builtin_status == -1) return -1; // exit shell
-    if (builtin_status == 1) return 0;   // success (builtin executed)
+  int builtin_status = handle_builtin(args);
+  if (builtin_status == -1)
+    return -1;
+  if (builtin_status == 1)
+    return 0;
 
-    char **args1 = NULL;
-    char **args2 = NULL;
-    int method = check_method_and_split(args, &args1, &args2);
+  char **args1 = NULL;
+  char **args2 = NULL;
+  int method = check_method_and_split(args, &args1, &args2);
 
-    switch (method) {
-        case 0: return execute_command(args);
-        case 1: return execute_pipeline(args1, args2);
-        case 2: return execute_redirection(args1, args2, 2); // >
-        case 3: return execute_redirection(args1, args2, 3); // >>
-        case 4: return execute_redirection(args1, args2, 4); // <
-        case 5: return execute_redirection(args1, args2, 5); // 2>
-        default:
-            printf("Unknown method\n");
-            return 1;
-    }
-}
-
-// Recursive function to handle &&, ||, ;
-int run_logic_chain(char **args) {
-    if (args[0] == NULL) return 0;
-
-    int i = 0;
-    while (args[i] != NULL) {
-        if (strcmp(args[i], "&&") == 0) {
-            args[i] = NULL;
-            int status = run_command_unit(args);
-            if (status == 0) {
-                return run_logic_chain(&args[i + 1]);
-            }
-            return status;
-        } else if (strcmp(args[i], "||") == 0) {
-            args[i] = NULL;
-            int status = run_command_unit(args);
-            if (status != 0) {
-                return run_logic_chain(&args[i + 1]);
-            }
-            return status;
-        } else if (strcmp(args[i], ";") == 0) {
-            args[i] = NULL;
-            run_command_unit(args);
-            return run_logic_chain(&args[i + 1]);
-        }
-        i++;
-    }
-
-    return run_command_unit(args);
+  switch (method) {
+  case 0:
+    return execute_command(args);
+  case 1:
+    return execute_pipeline(args1, args2);
+  case 2:
+    return execute_redirection(args1, args2, 2); // >
+  case 3:
+    return execute_redirection(args1, args2, 3); // >>
+  case 4:
+    return execute_redirection(args1, args2, 4); // <
+  case 5:
+    return execute_redirection(args1, args2, 5); // 2>
+  default:
+    printf("Unknown method\n");
+    return 1;
+  }
 }
 
 int execute_command(char **args) {

@@ -6,6 +6,5 @@ int execute_pipeline(char **args1, char **args2);
 int execute_redirection(char **args1, char **args2, int mode);
 
 int run_command_unit(char **args);
-int run_logic_chain(char **args);
 
 #endif
