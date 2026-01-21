@@ -1,4 +1,4 @@
-#include "../include/parser.h"
+#include "parser.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,7 +13,7 @@ void parse_line(char *line, char **args) {
   args[i] = NULL;
 }
 
-int check_command_method(char **args, char ***args1, char ***args2) {
+int check_method_and_split(char **args, char ***args1, char ***args2) {
   *args1 = args;
   *args2 = NULL;
 

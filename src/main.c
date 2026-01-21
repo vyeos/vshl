@@ -6,15 +6,25 @@
 #include "parser.h"
 #include "executor.h"
 #include "builtins.h"
+#include "utils.h"
 
 int main() {
     char *line = NULL;
     size_t len = 0;
     ssize_t nread;
     char *args[64];
+    char dir_name[256];
+    char git_branch[256];
 
     while (true) {
-        printf("vshl> ");
+        get_current_dir_name(dir_name, sizeof(dir_name));
+        get_git_branch(git_branch, sizeof(git_branch));
+        
+        if (strlen(git_branch) > 0) {
+            printf("%s git:%s > ", dir_name, git_branch);
+        } else {
+            printf("%s > ", dir_name);
+        }
         fflush(stdout);
         nread = getline(&line, &len, stdin);
 
@@ -46,7 +56,7 @@ int main() {
         char **args1 = NULL;
         char **args2 = NULL;
         
-        int method = check_command_method(args, &args1, &args2);
+        int method = check_method_and_split(args, &args1, &args2);
 
         switch (method) {
             case 0: // Normal
