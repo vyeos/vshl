@@ -1,9 +1,13 @@
+# Flow
+
+Input -> Check for logic chains -> Split on them -> builtins (if possible) -> split on pipeline or redirection -> start from check for logic chains
+
 # New TODO
 
 [-] working cd
 [-] pipelines
 [-] redirection (>, >>, < 2>)
-[ ] logic chaining (;, ||, &&)
+[-] logic chaining (;, ||, &&)
 [ ] quoting (git commit -m "git commit" -> git and commit will go difeerently)
 [ ] escaping (make \ work -> escape characters)
 [ ] globbing (fix ls *.c -> * for match all, ? for match one character)
