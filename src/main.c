@@ -43,15 +43,33 @@ int main() {
             continue; // executed builtin
         }
 
-        // Check for pipeline
         char **args1 = NULL;
         char **args2 = NULL;
         
-        // args is modified in place if pipe found
-        if (split_pipeline(args, &args1, &args2)) {
-            execute_pipeline(args1, args2);
-        } else {
-            execute_command(args);
+        int method = check_command_method(args, &args1, &args2);
+
+        switch (method) {
+            case 0: // Normal
+                execute_command(args);
+                break;
+            case 1: // Pipeline
+                execute_pipeline(args1, args2);
+                break;
+            case 2: // >
+                execute_redirection(args1, args2, 2);
+                break;
+            case 3: // >>
+                execute_redirection(args1, args2, 3);
+                break;
+            case 4: // <
+                execute_redirection(args1, args2, 4);
+                break;
+            case 5: // 2>
+                execute_redirection(args1, args2, 5);
+                break;
+            default:
+                printf("Unknown method\n");
+                break;
         }
     }
 
