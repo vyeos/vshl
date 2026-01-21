@@ -10,6 +10,14 @@ void parse_line(char *line, char **args) {
   int token_start = 1;
 
   while (line[pos] != '\0') {
+    if (line[pos] == '\\') {
+       memmove(&line[pos], &line[pos + 1], strlen(&line[pos + 1]) + 1);
+       if (line[pos] != '\0') {
+           pos++;
+       }
+       continue;
+    }
+
     if (line[pos] == '"') {
       in_quotes = !in_quotes;
       memmove(&line[pos], &line[pos + 1], strlen(&line[pos + 1]) + 1);

@@ -9,7 +9,7 @@ Input -> Check for logic chains -> Split on them -> builtins (if possible) -> sp
 [-] redirection (>, >>, < 2>)
 [-] logic chaining (;, ||, &&)
 [-] quoting (git commit -m "git commit" -> git and commit will go difeerently)
-[ ] escaping (make \ work -> escape characters)
+[-] escaping (make \ work -> escape characters)
 [ ] globbing (fix ls *.c -> * for match all, ? for match one character)
 [ ] signal handling (ctrl c should print new line instead of killing term, ctrl z pauses the process by keeping in mem alive in bg)
 [ ] job control (bg exec, process list, bring job to fg) 
