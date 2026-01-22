@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "globbing.h"
 #include "signals.h"
+#include "jobs.h"
 
 int main() {
   setup_parent_signals();
@@ -20,6 +21,8 @@ int main() {
   char git_branch[256];
 
   while (true) {
+    check_zombies();
+    
     get_current_dir_name(dir_name, sizeof(dir_name));
     get_git_branch(git_branch, sizeof(git_branch));
 

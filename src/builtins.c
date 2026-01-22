@@ -1,8 +1,12 @@
-#include "builtins.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+
+#include "builtins.h"
+#include "jobs.h"
 
 int handle_builtin(char **args) {
   if (args[0] == NULL) {
@@ -20,6 +24,47 @@ int handle_builtin(char **args) {
     if (chdir(t_dir) == -1)
       perror("cd failed");
     return 1;
+  }
+
+  if (strcmp(args[0], "jobs") == 0) {
+      print_jobs();
+      return 1;
+  }
+
+  if (strcmp(args[0], "fg") == 0) {
+      if (!args[1]) {
+          printf("Usage: fg <job_id>\n");
+          return 1;
+      }
+      int id = atoi(args[1]);
+      Job *job = find_job_by_id(id);
+      if (!job) {
+          printf("fg: job not found: %s\n", args[1]);
+          return 1;
+      }
+      
+      if (job->status == JOB_STOPPED) {
+          kill(job->pid, SIGCONT);
+      }
+      
+      update_job_status(job->pid, JOB_RUNNING);
+      
+      printf("%s\n", job->command);
+      
+      int status;
+      waitpid(job->pid, &status, WUNTRACED);
+      
+      if (WIFEXITED(status)) {
+          remove_job(job->pid);
+      } else if (WIFSIGNALED(status)) {
+          if (WTERMSIG(status) != SIGINT)
+               printf("\n");
+          remove_job(job->pid);
+      } else if (WIFSTOPPED(status)) {
+          update_job_status(job->pid, JOB_STOPPED);
+          printf("\n[Suspended] %d\n", job->pid);
+      }
+      return 1;
   }
 
   return 0;

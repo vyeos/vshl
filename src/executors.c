@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "jobs.h"
 #include "builtins.h"
 #include "executor.h"
 #include "parser.h"
@@ -44,7 +45,26 @@ int run_command_unit(char **args) {
   }
 }
 
+int is_background(char **args) {
+    int i = 0;
+    while (args[i] != NULL) i++;
+    
+    if (i > 0 && strcmp(args[i-1], "&") == 0) {
+        args[i-1] = NULL;
+        return 1;
+    }
+    return 0;
+}
+
 int execute_command(char **args) {
+  int bg = is_background(args);
+  
+  char command_buf[256] = "";
+  for(int k=0; args[k]!=NULL; k++) {
+      strncat(command_buf, args[k], sizeof(command_buf) - strlen(command_buf) - 2);
+      if(args[k+1]) strncat(command_buf, " ", sizeof(command_buf) - strlen(command_buf) - 1);
+  }
+
   pid_t pid = fork();
   if (pid == 0) { // child
     restore_child_signals();
@@ -52,21 +72,29 @@ int execute_command(char **args) {
     perror("Error");
     exit(1);
   } else if (pid > 0) { // parent
-    int status;
-    waitpid(pid, &status, WUNTRACED);
-    if (WIFEXITED(status)) {
-        return WEXITSTATUS(status);
+    if (bg) {
+        int job_id = add_job(pid, JOB_RUNNING, command_buf);
+        printf("[%d] %d\n", job_id, pid);
+        return 0;
+    } else {
+        int status;
+        waitpid(pid, &status, WUNTRACED);
+        
+        if (WIFEXITED(status)) {
+            return WEXITSTATUS(status);
+        }
+        if (WIFSIGNALED(status)) {
+            if (WTERMSIG(status) != SIGINT)
+                printf("\n");
+            return 128 + WTERMSIG(status);
+        }
+        if (WIFSTOPPED(status)) {
+            printf("\n[Suspended] %d\n", pid);
+            add_job(pid, JOB_STOPPED, command_buf);
+            return 128 + WSTOPSIG(status);
+        }
+        return 1;
     }
-    if (WIFSIGNALED(status)) {
-        if (WTERMSIG(status) != SIGINT)
-             printf("\n");
-        return 128 + WTERMSIG(status);
-    }
-    if (WIFSTOPPED(status)) {
-        printf("\n[Suspended] %d\n", pid);
-        return 128 + WSTOPSIG(status);
-    }
-    return 1;
   } else {
     perror("Fork failed");
     return 1;
