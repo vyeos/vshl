@@ -51,7 +51,10 @@ int main() {
     if (line[0] == '\0')
       continue;
 
-    parse_line(line, args);
+    char expanded_line[4096];
+    expand_envs(line, expanded_line, sizeof(expanded_line));
+
+    parse_line(expanded_line, args);
 
     if (args[0] == NULL) {
       continue;
