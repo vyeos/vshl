@@ -9,6 +9,7 @@
 #include "builtins.h"
 #include "executor.h"
 #include "parser.h"
+#include "signals.h"
 
 int run_command_unit(char **args) {
   if (args[0] == NULL)
@@ -46,13 +47,26 @@ int run_command_unit(char **args) {
 int execute_command(char **args) {
   pid_t pid = fork();
   if (pid == 0) { // child
+    restore_child_signals();
     execvp(args[0], args);
     perror("Error");
     exit(1);
   } else if (pid > 0) { // parent
     int status;
-    waitpid(pid, &status, 0);
-    return WEXITSTATUS(status);
+    waitpid(pid, &status, WUNTRACED);
+    if (WIFEXITED(status)) {
+        return WEXITSTATUS(status);
+    }
+    if (WIFSIGNALED(status)) {
+        if (WTERMSIG(status) != SIGINT)
+             printf("\n");
+        return 128 + WTERMSIG(status);
+    }
+    if (WIFSTOPPED(status)) {
+        printf("\n[Suspended] %d\n", pid);
+        return 128 + WSTOPSIG(status);
+    }
+    return 1;
   } else {
     perror("Fork failed");
     return 1;
@@ -96,13 +110,24 @@ int execute_redirection(char **args1, char **args2, int mode) {
     close(fd);
 
     // execute args1
+    restore_child_signals();
     execvp(args1[0], args1);
     perror("Exec failed");
     exit(1);
   } else if (pid > 0) {
     int status;
-    waitpid(pid, &status, 0);
-    return WEXITSTATUS(status);
+    waitpid(pid, &status, WUNTRACED);
+    if (WIFEXITED(status)) {
+        return WEXITSTATUS(status);
+    }
+    if (WIFSIGNALED(status)) {
+        return 128 + WTERMSIG(status);
+    }
+    if (WIFSTOPPED(status)) {
+        printf("\n[Suspended] %d\n", pid);
+        return 128 + WSTOPSIG(status);
+    }
+    return 1;
   } else {
     perror("Fork failed");
     return 1;
@@ -139,7 +164,18 @@ int execute_pipeline(char **args1, char **args2) {
   close(pipefd[0]);
   close(pipefd[1]);
   int status1, status2;
-  waitpid(pid1, &status1, 0);
-  waitpid(pid2, &status2, 0);
-  return WEXITSTATUS(status2); // Return status of the last command in pipeline
+  waitpid(pid1, &status1, WUNTRACED);
+  waitpid(pid2, &status2, WUNTRACED);
+  
+    if (WIFEXITED(status2)) {
+        return WEXITSTATUS(status2);
+    }
+    if (WIFSIGNALED(status2)) {
+        return 128 + WTERMSIG(status2);
+    }
+    if (WIFSTOPPED(status2)) {
+        printf("\n[Suspended] %d\n", pid2);
+        return 128 + WSTOPSIG(status2);
+    }
+    return 1;
 }

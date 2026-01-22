@@ -2,13 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "parser.h"
 #include "shell.h"
 #include "utils.h"
 #include "globbing.h"
+#include "signals.h"
 
 int main() {
+  setup_parent_signals();
   char *line = NULL;
   size_t len = 0;
   ssize_t nread;
@@ -30,6 +33,11 @@ int main() {
     nread = getline(&line, &len, stdin);
 
     if (nread == -1) {
+        if (errno == EINTR) {
+             clearerr(stdin);
+             errno = 0; 
+             continue;
+        }
       printf("\nExiting...\n");
       break;
     }
