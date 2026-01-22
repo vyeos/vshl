@@ -34,13 +34,19 @@ Input -> Check for logic chains -> Split on them -> builtins (if possible) -> sp
 include
  - builtins.h
  - executor.h
+ - globbing.h
+ - jobs.h
  - parser.h
  - shell.h
- - globbing.h
+ - signals.h
+ - utils.h
 src
  - builtins.c
  - executor.c
+ - globbing.c
+ - jobs.c
  - parser.c
  - shell.c
- - globbing.c
+ - signals.c
+ - utils.c
 Makefile
