@@ -40,41 +40,56 @@ void get_git_branch(char *buffer, size_t size) {
   pclose(fp);
 }
 
-void expand_envs(char *in, char *out) {
-  int i = 0, j = 0;
-  while (in[i] != 0) {
+void expand_envs(char *in, char *out, size_t out_size) {
+  size_t i = 0, j = 0;
+  while (in[i] != '\0' && j < out_size - 1) {
     if ((i == 0 && in[i] == '~') || (in[i] == '~' && in[i - 1] == ' ')) {
-      char *tilde = getenv("HOME");
+      char *home = getenv("HOME");
       i++;
-      if (tilde != NULL) {
-        for (int m = 0; tilde[m] != '\0'; m++) {
-          out[j] = tilde[m];
-          j++;
+      if (home != NULL) {
+        size_t len = strlen(home);
+        if (j + len < out_size) {
+          strncpy(out + j, home, len);
+          j += len;
         }
       }
-    } else if (in[i] != '$') {
-      out[j] = in[i];
-      j++;
-      i++;
-    } else {
+      continue;
+    }
+
+    if (in[i] == '$') {
       i++;
       char var_name[256];
       int k = 0;
-      while (isalnum(in[i]) || in[i] == '_') {
-        var_name[k] = in[i];
-        k++;
+
+      if (in[i] == '{') {
         i++;
+        while (in[i] != '}' && in[i] != '\0') {
+          if (k < 255)
+            var_name[k++] = in[i];
+          i++;
+        }
+        if (in[i] == '}')
+          i++;
+      } else {
+        while (isalnum(in[i]) || in[i] == '_') {
+          if (k < 255)
+            var_name[k++] = in[i];
+          i++;
+        }
       }
       var_name[k] = '\0';
 
       char *value = getenv(var_name);
       if (value != NULL) {
-        for (int m = 0; value[m] != '\0'; m++) {
-          out[j] = value[m];
-          j++;
+        size_t len = strlen(value);
+        if (j + len < out_size) {
+          strncpy(out + j, value, len);
+          j += len;
         }
       }
+      continue;
     }
+    out[j++] = in[i++];
   }
   out[j] = '\0';
 }

@@ -28,6 +28,20 @@ Input -> Check for logic chains -> Split on them -> builtins (if possible) -> sp
 - **Globbing inside quotes**: Wildcards are expanded even if they are inside quotes (e.g., `ls "*.c"` acts like `ls *.c`). This is because quotes are stripped during parsing before the glob expansion step. To fix this, the parser would need to preserve quote information or handle expansion during parsing.
 - **Redirection**: Output redirection (`>`) overwrites files blindly (no `noclobber` -> is present in other shells). 
 
+## Environment Expansion Limitations
+- **Supported Expansions**:
+  - `~`: Expands to `$HOME` (only at the start of a token).
+  - `$VAR`: Expands to the value of the environment variable.
+  - `${VAR}`: Expands to the value of the environment variable (braces are stripped).
+- **Behavior**:
+  - Undefined variables occuring in `$VAR` or `${VAR}` syntax expand to an empty string.
+  - Buffer overflow protection is enforced; expansion truncates if the output buffer is too small.
+- **Unsupported**:
+  - `~user`: Expansion for specific users is not supported.
+  - Command substitution (`$(cmd)` or backticks).
+  - Arithmetic expansion (`$((...))`).
+  - Nested expansion or special parameter handling (e.g., `$?`, `$!`, `$#`) is not currently implemented in this function. 
+
 
 ## file structure
 

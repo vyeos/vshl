@@ -5,6 +5,6 @@
 
 void get_current_dir_name(char *buffer, size_t size);
 void get_git_branch(char *buffer, size_t size);
-void expand_envs(char *in, char *out);
+void expand_envs(char *in, char *out, size_t out_size);
 
 #endif
