@@ -8,13 +8,13 @@
 #include "utils.h"
 
 void get_current_dir_name(char *buffer, size_t size) {
-  char cwd[1024];
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    char *last_slash = strrchr(cwd, '/');
+  char cmd[1024];
+  if (getcwd(cmd, sizeof(cmd)) != NULL) {
+    char *last_slash = strrchr(cmd, '/');
     if (last_slash) {
       strncpy(buffer, last_slash + 1, size - 1);
     } else {
-      strncpy(buffer, cwd, size - 1);
+      strncpy(buffer, cmd, size - 1);
     }
     buffer[size - 1] = '\0';
   } else {

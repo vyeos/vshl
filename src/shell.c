@@ -1,11 +1,17 @@
 #include <string.h>
 
+#include "builtins.h"
 #include "executor.h"
 #include "shell.h"
 
 int new_shell(char **args) {
   if (args[0] == NULL)
     return 0;
+
+  if (strcmp(args[0], "export") == 0) {
+    handle_export(args);
+    return 1;
+  }
 
   int i = 0;
   while (args[i] != NULL) {

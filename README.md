@@ -13,7 +13,7 @@ Input -> Check for logic chains -> Split on them -> builtins (if possible) -> sp
 [-] globbing (fix ls *.c -> * for match all, ? for match one character)
 [-] signal handling (ctrl c should print new line instead of killing term, ctrl z pauses the process by keeping in mem alive in bg)
 [-] job control (bg exec, process list, bring job to fg) 
-[ ] env and expansion (env vars export, $, ~ expansion for everything curr only works in cd)
+[-] env and expansion (env vars export, $, ~ expansion for everything curr only works in cd)
 [ ] alias
 [ ] startup config
 [ ] raw mode (cmd his, tab autocomplete) 
