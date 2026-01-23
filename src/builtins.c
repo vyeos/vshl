@@ -33,6 +33,18 @@ int handle_export(char **args) {
   return 1;
 }
 
+int handle_unset(char **args) {
+  if (args[1] == NULL) {
+    fprintf(stderr, "vshl: expected argument to \"unset\"\n");
+    return 1;
+  }
+
+  if (unsetenv(args[1]) != 0) {
+    perror("vshl");
+  }
+  return 1;
+}
+
 int handle_builtin(char **args) {
   if (args[0] == NULL) {
     return 0;

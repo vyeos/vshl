@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include "alias.h"
 #include "builtins.h"
 #include "executor.h"
 #include "shell.h"
@@ -10,6 +11,12 @@ int new_shell(char **args) {
 
   if (strcmp(args[0], "export") == 0) {
     handle_export(args);
+    return 1;
+  } else if (strcmp(args[0], "unset") == 0) {
+    handle_unset(args);
+    return 1;
+  } else if (strcmp(args[0], "alias") == 0) {
+    add_alias(args[1], args[2]);
     return 1;
   }
 
