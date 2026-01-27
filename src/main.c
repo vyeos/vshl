@@ -38,8 +38,6 @@ int main() {
       snprintf(prompt, sizeof(prompt), "%s > ", dir_name);
     }
 
-    signals_set_prompt(prompt);
-
     char *line = read_command_line(prompt);
     if (line == NULL) {
       if (signals_consume_sigint()) {

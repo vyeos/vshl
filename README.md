@@ -16,7 +16,7 @@ Input -> Check for logic chains -> Split on them -> builtins (if possible) -> sp
 [-] env and expansion (env vars export, $, ~ expansion for everything curr only works in cd)
 [-] alias
 [-] startup config
-[ ] raw mode (cmd his, tab autocomplete) 
+[-] raw mode (cmd his, tab autocomplete) 
 
 ## Startup config: ~/.vshlrc
 
