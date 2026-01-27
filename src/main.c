@@ -13,12 +13,12 @@
 #include "utils.h"
 
 int main() {
-  setup_parent_signals();
   char *args[64];
   char dir_name[256];
   char git_branch[256];
 
   line_editing_init();
+  setup_parent_signals();
 
   if (source_vshlrc() == -1) {
     line_editing_shutdown();
@@ -38,8 +38,17 @@ int main() {
       snprintf(prompt, sizeof(prompt), "%s > ", dir_name);
     }
 
+    signals_set_prompt(prompt);
+
     char *line = read_command_line(prompt);
     if (line == NULL) {
+      if (signals_consume_sigint()) {
+        continue;
+      }
+      if (!feof(stdin)) {
+        clearerr(stdin);
+        continue;
+      }
       printf("\nExiting...\n");
       break;
     }
