@@ -16,11 +16,12 @@ int run_command_unit(char **args) {
   if (args[0] == NULL)
     return 0;
 
-  int builtin_status = handle_builtin(args);
-  if (builtin_status == -1)
+  int builtin_status = 0;
+  int builtin_handled = handle_builtin(args, &builtin_status);
+  if (builtin_handled == -1)
     return -1;
-  if (builtin_status == 1)
-    return 0;
+  if (builtin_handled == 1)
+    return builtin_status;
 
   char **args1 = NULL;
   char **args2 = NULL;

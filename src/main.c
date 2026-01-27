@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config/vshlrc.h"
 #include "globbing.h"
 #include "jobs.h"
 #include "parser.h"
@@ -19,6 +20,10 @@ int main() {
   char *args[64];
   char dir_name[256];
   char git_branch[256];
+
+  if (source_vshlrc() == -1) {
+    return 0;
+  }
 
   while (true) {
     check_zombies();

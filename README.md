@@ -14,9 +14,18 @@ Input -> Check for logic chains -> Split on them -> builtins (if possible) -> sp
 [-] signal handling (ctrl c should print new line instead of killing term, ctrl z pauses the process by keeping in mem alive in bg)
 [-] job control (bg exec, process list, bring job to fg) 
 [-] env and expansion (env vars export, $, ~ expansion for everything curr only works in cd)
-[ ] alias
-[ ] startup config
+[-] alias
+[-] startup config
 [ ] raw mode (cmd his, tab autocomplete) 
+
+## Startup config: ~/.vshlrc
+
+On first launch, vshl creates `~/.vshlrc` if it doesn't exist, and sources it on every startup.
+
+Examples:
+
+- `export PATH="$PATH:$HOME/bin"`
+- `alias ll="ls -la"`
 
 # Far Fetched features
 [ ] themes
