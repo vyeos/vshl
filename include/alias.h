@@ -1,7 +1,8 @@
 #ifndef ALIAS_H
 #define ALIAS_H
 
-void add_alias(char *name, char *cmd);
-char get_alias(char *name);
+void alias_set(const char *name, const char *cmd);
+const char *alias_get(const char *name);
+void alias_print_all(void);
 
 #endif

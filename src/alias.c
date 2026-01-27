@@ -1,4 +1,3 @@
-#include <_string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,9 +12,13 @@ typedef struct Alias {
 
 Alias *head = NULL;
 
-void list_alias() { return; }
+void alias_print_all(void) {
+  for (Alias *current = head; current != NULL; current = current->next) {
+    printf("alias %s=\"%s\"\n", current->name, current->cmd);
+  }
+}
 
-void add_alias(char *name, char *cmd) {
+void alias_set(const char *name, const char *cmd) {
 
   if (name == NULL || cmd == NULL) {
     fprintf(stderr, "vshl: expected 2 arguments for \"alias\"\n");
@@ -49,19 +52,15 @@ void add_alias(char *name, char *cmd) {
   head = new_node;
 }
 
-char get_alias(char *name) {
+const char *alias_get(const char *name) {
   if (name == NULL) {
-    fprintf(stderr, "vshl: expected argument for \"alias\"\n");
-    return 1;
+    return NULL;
   }
 
-  Alias *current = head;
-
-  while (current != NULL) {
-    if (current->name == name) {
-      return *current->name;
+  for (Alias *current = head; current != NULL; current = current->next) {
+    if (strcmp(current->name, name) == 0) {
+      return current->cmd;
     }
   }
-  fprintf(stderr, "vshl: no alias for \"%d\"\n", *name);
-  return 1;
+  return NULL;
 }
