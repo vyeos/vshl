@@ -76,8 +76,7 @@ static int handle_alias(char **args) {
     value = eq + 1;
   } else {
     if (args[2] == NULL) {
-      fprintf(stderr, "vshl: expected VALUE for \"alias\"\n");
-      return 1;
+      return alias_print_one(args[1]);
     }
     name = args[1];
 
@@ -109,6 +108,21 @@ static int handle_alias(char **args) {
 
   alias_set(name, value);
   return 0;
+}
+
+static int handle_unalias(char **args) {
+  if (args[1] == NULL) {
+    fprintf(stderr, "vshl: expected argument to \"unalias\"\n");
+    return 1;
+  }
+
+  int ret = 0;
+  for (int i = 1; args[i] != NULL; i++) {
+    if (alias_unset(args[i]) != 0) {
+      ret = 1;
+    }
+  }
+  return ret;
 }
 
 int handle_builtin(char **args, int *status_out) {
@@ -198,6 +212,11 @@ int handle_builtin(char **args, int *status_out) {
 
   if (strcmp(args[0], "alias") == 0) {
     *status_out = handle_alias(args);
+    return 1;
+  }
+
+  if (strcmp(args[0], "unalias") == 0) {
+    *status_out = handle_unalias(args);
     return 1;
   }
 

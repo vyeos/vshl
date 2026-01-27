@@ -64,3 +64,48 @@ const char *alias_get(const char *name) {
   }
   return NULL;
 }
+
+int alias_print_one(const char *name) {
+  if (name == NULL || name[0] == '\0') {
+    fprintf(stderr, "vshl: expected argument for \"alias\"\n");
+    return 1;
+  }
+
+  const char *cmd = alias_get(name);
+  if (cmd == NULL) {
+    fprintf(stderr, "vshl: no alias for \"%s\"\n", name);
+    return 1;
+  }
+
+  printf("alias %s=\"%s\"\n", name, cmd);
+  return 0;
+}
+
+int alias_unset(const char *name) {
+  if (name == NULL || name[0] == '\0') {
+    fprintf(stderr, "vshl: expected argument for \"unalias\"\n");
+    return 1;
+  }
+
+  Alias *prev = NULL;
+  Alias *current = head;
+
+  while (current != NULL) {
+    if (strcmp(current->name, name) == 0) {
+      if (prev == NULL) {
+        head = current->next;
+      } else {
+        prev->next = current->next;
+      }
+      free(current->name);
+      free(current->cmd);
+      free(current);
+      return 0;
+    }
+    prev = current;
+    current = current->next;
+  }
+
+  fprintf(stderr, "vshl: no alias for \"%s\"\n", name);
+  return 1;
+}

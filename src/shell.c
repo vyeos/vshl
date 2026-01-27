@@ -12,6 +12,8 @@ static int should_expand_alias(const char *cmd) {
     return 0;
   if (strcmp(cmd, "alias") == 0)
     return 0;
+  if (strcmp(cmd, "unalias") == 0)
+    return 0;
   if (strcmp(cmd, "export") == 0)
     return 0;
   if (strcmp(cmd, "unset") == 0)
