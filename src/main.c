@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +6,7 @@
 #include "config/vshlrc.h"
 #include "globbing.h"
 #include "jobs.h"
+#include "line_editing.h"
 #include "parser.h"
 #include "shell.h"
 #include "signals.h"
@@ -14,14 +14,14 @@
 
 int main() {
   setup_parent_signals();
-  char *line = NULL;
-  size_t len = 0;
-  ssize_t nread;
   char *args[64];
   char dir_name[256];
   char git_branch[256];
 
+  line_editing_init();
+
   if (source_vshlrc() == -1) {
+    line_editing_shutdown();
     return 0;
   }
 
@@ -31,30 +31,26 @@ int main() {
     get_current_dir_name(dir_name, sizeof(dir_name));
     get_git_branch(git_branch, sizeof(git_branch));
 
+    char prompt[1024];
     if (strlen(git_branch) > 0) {
-      printf("%s git:(%s) > ", dir_name, git_branch);
+      snprintf(prompt, sizeof(prompt), "%s git:(%s) > ", dir_name, git_branch);
     } else {
-      printf("%s > ", dir_name);
+      snprintf(prompt, sizeof(prompt), "%s > ", dir_name);
     }
 
-    fflush(stdout);
-    nread = getline(&line, &len, stdin);
-
-    if (nread == -1) {
-      if (errno == EINTR) {
-        clearerr(stdin);
-        errno = 0;
-        continue;
-      }
+    char *line = read_command_line(prompt);
+    if (line == NULL) {
       printf("\nExiting...\n");
       break;
     }
 
-    if (nread > 0 && line[nread - 1] == '\n')
-      line[nread - 1] = '\0';
+    line_editing_record_line(line);
 
     if (line[0] == '\0')
+    {
+      free(line);
       continue;
+    }
 
     char expanded_line[4096];
     expand_envs(line, expanded_line, sizeof(expanded_line));
@@ -75,10 +71,13 @@ int main() {
     }
 
     if (status == -1) {
+      free(line);
       break;
     }
+
+    free(line);
   }
 
-  free(line);
+  line_editing_shutdown();
   return 0;
 }
