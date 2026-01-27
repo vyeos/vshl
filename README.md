@@ -1,101 +1,107 @@
-# Flow
+# vshl - A Custom Shell Implementation
 
-Input -> Check for logic chains -> Split on them -> builtins (if possible) -> split on pipeline or redirection -> start from check for logic chains
+A lightweight POSIX shell written in C with modern features like command history, tab completion, job control, and alias support.
 
-# New TODO
+## Features
 
-[-] working cd
-[-] pipelines
-[-] redirection (>, >>, < 2>)
-[-] logic chaining (;, ||, &&)
-[-] quoting (git commit -m "git commit" -> git and commit will go difeerently)
-[-] escaping (make \ work -> escape characters)
-[-] globbing (fix ls *.c -> * for match all, ? for match one character)
-[-] signal handling (ctrl c should print new line instead of killing term, ctrl z pauses the process by keeping in mem alive in bg)
-[-] job control (bg exec, process list, bring job to fg) 
-[-] env and expansion (env vars export, $, ~ expansion for everything curr only works in cd)
-[-] alias
-[-] startup config
-[-] raw mode (cmd his, tab autocomplete) 
+### Core Functionality
+- **Command Execution**: Execute system commands with full argument support
+- **Pipelines**: Chain commands with `|` operator
+- **Redirection**: Support for `>`, `>>`, `<`, and `2>` (stdout, append, stdin, stderr)
+- **Logic Operators**: Sequential (`;`), conditional (`&&`, `||`) command execution
+- **Background Jobs**: Run commands in background with `&` and manage with `jobs`, `fg`
 
-# Security & Hardening
+### Interactive Features
+- **Command History**: Navigate previous commands with arrow keys (stored in `~/.vshl_history`)
+- **Tab Completion**: Auto-complete commands and filenames
+- **Aliases**: Create command shortcuts with `alias` and `unalias`
+- **Startup Config**: Auto-loads `~/.vshlrc` on launch for persistent settings
 
-All identified vulnerabilities have been fixed:
+### Built-in Commands
+- `cd [dir]` - Change directory (supports `~` expansion)
+- `export VAR=value` - Set environment variables
+- `unset VAR` - Remove environment variables
+- `alias name="command"` - Create command alias
+- `unalias name` - Remove alias
+- `jobs` - List background jobs
+- `fg [job_id]` - Bring job to foreground
+- `exit [code]` - Exit shell
 
-## Memory Safety
-- **Buffer Overflow Protection**: Fixed unsafe `strncat` usage in command buffer construction
-- **NULL Pointer Checks**: Added NULL checks for all `strdup()`, `malloc()`, and `realloc()` return values
-- **Memory Leak Prevention**: Proper cleanup on allocation failures in alias, globbing, and job management
-- **Bounds Checking**: All buffer operations now validate sizes before writing
+### Advanced Features
+- **Globbing**: Wildcard expansion with `*` (match all) and `?` (match one)
+- **Environment Expansion**: `$VAR`, `${VAR}`, and `~` expansion
+- **Signal Handling**: Ctrl-C interrupts current job, Ctrl-Z suspends to background
+- **Quote Handling**: Single and double quotes, backslash escaping
 
-## System Call Hardening
-- **Error Handling**: Added error checks for `dup2()`, `fork()`, `kill()`, and `open()` calls
-- **File Descriptor Leaks**: Proper cleanup of file descriptors on error paths
-- **Signal Safety**: Child processes properly restore signal handlers before `exec()`
+## Installation
 
-## Input Validation
-- **Environment Variables**: NULL checks for `HOME` and other environment variables
-- **Job IDs**: Validation of numeric inputs to prevent invalid memory access
-- **Path Validation**: Safe handling of directory changes and file operations
-- **Array Bounds**: Parse line properly validates array indices
+### Prerequisites
+- GCC compiler
+- GNU Make
+- libedit library (for macOS/BSD) or libreadline (for Linux)
 
-## Process Management
-- **Zombie Prevention**: Proper error handling in pipeline fork failures
-- **Signal Handling**: Safe signal handler implementation using `sig_atomic_t`
-- **Process Cleanup**: Orphaned processes properly terminated on errors
+### Build
+```bash
+make
+```
 
-## Startup config: ~/.vshlrc
+### Run
+```bash
+./vshl
+```
 
-On first launch, vshl creates `~/.vshlrc` if it doesn't exist, and sources it on every startup.
+## Configuration
 
-Examples:
+On first launch, vshl creates `~/.vshlrc` with default settings. Customize it with:
 
-- `export PATH="$PATH:$HOME/bin"`
-- `alias ll="ls -la"`
+```bash
+# Environment variables
+export PATH="$PATH:$HOME/bin"
+export EDITOR=vim
 
-# Far Fetched features
-[ ] themes
-[ ] autocorrect commands
-[ ] trash (when running rm -rf, move the file/folder to .trash or somewhere and manage that using shell -> can be brought back by undo)
-[ ] native zoxide (better to make a micro service or use zoxide)
+# Aliases
+alias ll="ls -la"
+alias gs="git status"
+```
 
-# Limitations
-- **Globbing inside quotes**: Wildcards are expanded even if they are inside quotes (e.g., `ls "*.c"` acts like `ls *.c`). This is because quotes are stripped during parsing before the glob expansion step. To fix this, the parser would need to preserve quote information or handle expansion during parsing.
-- **Redirection**: Output redirection (`>`) overwrites files blindly (no `noclobber` -> is present in other shells). 
+## Security
 
-## Environment Expansion Limitations
-- **Supported Expansions**:
-  - `~`: Expands to `$HOME` (only at the start of a token).
-  - `$VAR`: Expands to the value of the environment variable.
-  - `${VAR}`: Expands to the value of the environment variable (braces are stripped).
-- **Behavior**:
-  - Undefined variables occuring in `$VAR` or `${VAR}` syntax expand to an empty string.
-  - Buffer overflow protection is enforced; expansion truncates if the output buffer is too small.
-- **Unsupported**:
-  - `~user`: Expansion for specific users is not supported.
-  - Command substitution (`$(cmd)` or backticks).
-  - Arithmetic expansion (`$((...))`).
-  - Nested expansion or special parameter handling (e.g., `$?`, `$!`, `$#`) is not currently implemented in this function. 
+The codebase has been hardened against common vulnerabilities:
+- Buffer overflow protection with bounds checking
+- NULL pointer validation for all allocations
+- Error handling for system calls (fork, dup2, kill)
+- Safe signal handling with sig_atomic_t
+- Input validation for environment variables and job IDs
 
+## Limitations
 
-## file structure
+- **Globbing in Quotes**: Wildcards expand even inside quotes (`ls "*.c"` behaves like `ls *.c`)
+- **No Noclobber**: Output redirection (`>`) always overwrites files
+- **Limited Expansion**: No command substitution, arithmetic expansion, or special parameters (`$?`, `$$`, etc.)
+- **Tilde Expansion**: Only `~` (not `~user`) is supported
 
-include
- - builtins.h
- - executor.h
- - globbing.h
- - jobs.h
- - parser.h
- - shell.h
- - signals.h
- - utils.h
-src
- - builtins.c
- - executor.c
- - globbing.c
- - jobs.c
- - parser.c
- - shell.c
- - signals.c
- - utils.c
-Makefile
+## Project Structure
+
+```
+include/          Header files
+  ├── builtins.h
+  ├── executor.h
+  ├── globbing.h
+  ├── jobs.h
+  ├── parser.h
+  ├── shell.h
+  ├── signals.h
+  └── utils.h
+src/              Source files
+  ├── builtins.c
+  ├── executors.c
+  ├── globbing.c
+  ├── jobs.c
+  ├── parsers.c
+  ├── shell.c
+  ├── signals.c
+  ├── utils.c
+  ├── main.c
+  ├── alias.c
+  └── line_editing.c
+```
