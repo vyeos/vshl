@@ -8,21 +8,32 @@
 #include "utils.h"
 
 void get_current_dir_name(char *buffer, size_t size) {
+  if (buffer == NULL || size == 0) {
+    return;
+  }
+  
   char cmd[1024];
   if (getcwd(cmd, sizeof(cmd)) != NULL) {
     char *last_slash = strrchr(cmd, '/');
-    if (last_slash) {
+    if (last_slash && last_slash[1] != '\0') {
       strncpy(buffer, last_slash + 1, size - 1);
+    } else if (last_slash) {
+      strncpy(buffer, "/", size - 1);
     } else {
       strncpy(buffer, cmd, size - 1);
     }
     buffer[size - 1] = '\0';
   } else {
     strncpy(buffer, "unknown", size - 1);
+    buffer[size - 1] = '\0';
   }
 }
 
 void get_git_branch(char *buffer, size_t size) {
+  if (buffer == NULL || size == 0) {
+    return;
+  }
+  
   FILE *fp = popen("git rev-parse --abbrev-ref HEAD 2>/dev/null", "r");
   if (fp == NULL) {
     buffer[0] = '\0';
@@ -41,6 +52,11 @@ void get_git_branch(char *buffer, size_t size) {
 }
 
 void expand_envs(char *in, char *out, size_t out_size) {
+  if (in == NULL || out == NULL || out_size == 0) {
+    if (out != NULL && out_size > 0) out[0] = '\0';
+    return;
+  }
+  
   size_t i = 0, j = 0;
   while (in[i] != '\0' && j < out_size - 1) {
     if ((i == 0 && in[i] == '~') || (in[i] == '~' && in[i - 1] == ' ')) {
@@ -48,8 +64,11 @@ void expand_envs(char *in, char *out, size_t out_size) {
       i++;
       if (home != NULL) {
         size_t len = strlen(home);
-        if (j + len < out_size) {
-          strncpy(out + j, home, len);
+        if (j + len >= out_size) {
+          len = out_size - j - 1;
+        }
+        if (len > 0) {
+          memcpy(out + j, home, len);
           j += len;
         }
       }
@@ -82,8 +101,11 @@ void expand_envs(char *in, char *out, size_t out_size) {
       char *value = getenv(var_name);
       if (value != NULL) {
         size_t len = strlen(value);
-        if (j + len < out_size) {
-          strncpy(out + j, value, len);
+        if (j + len >= out_size) {
+          len = out_size - j - 1;
+        }
+        if (len > 0) {
+          memcpy(out + j, value, len);
           j += len;
         }
       }

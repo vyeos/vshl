@@ -3,6 +3,11 @@
 #include <string.h>
 
 void parse_line(char *line, char **args) {
+  if (line == NULL || args == NULL) {
+    if (args != NULL) args[0] = NULL;
+    return;
+  }
+  
   int i = 0;
   int pos = 0;
   char *current_token = line;

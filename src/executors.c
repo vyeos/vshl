@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,9 +62,19 @@ int execute_command(char **args) {
   int bg = is_background(args);
   
   char command_buf[256] = "";
-  for(int k=0; args[k]!=NULL; k++) {
-      strncat(command_buf, args[k], sizeof(command_buf) - strlen(command_buf) - 2);
-      if(args[k+1]) strncat(command_buf, " ", sizeof(command_buf) - strlen(command_buf) - 1);
+  size_t buf_len = 0;
+  for(int k=0; args[k]!=NULL && buf_len < sizeof(command_buf) - 1; k++) {
+      size_t arg_len = strlen(args[k]);
+      size_t space_needed = arg_len + (args[k+1] ? 1 : 0);
+      if (buf_len + space_needed >= sizeof(command_buf) - 1) {
+          break;
+      }
+      strcpy(command_buf + buf_len, args[k]);
+      buf_len += arg_len;
+      if(args[k+1]) {
+          command_buf[buf_len++] = ' ';
+          command_buf[buf_len] = '\0';
+      }
   }
 
   pid_t pid = fork();
@@ -112,28 +123,44 @@ int execute_redirection(char **args1, char **args2, int mode) {
         perror("Open failed");
         exit(1);
       }
-      dup2(fd, STDOUT_FILENO);
+      if (dup2(fd, STDOUT_FILENO) == -1) {
+        perror("dup2 failed");
+        close(fd);
+        exit(1);
+      }
     } else if (mode == 3) { // >>
       fd = open(args2[0], O_WRONLY | O_CREAT | O_APPEND, 0644);
       if (fd == -1) {
         perror("Open failed");
         exit(1);
       }
-      dup2(fd, STDOUT_FILENO);
+      if (dup2(fd, STDOUT_FILENO) == -1) {
+        perror("dup2 failed");
+        close(fd);
+        exit(1);
+      }
     } else if (mode == 4) { // <
       fd = open(args2[0], O_RDONLY);
       if (fd == -1) {
         perror("Open failed");
         exit(1);
       }
-      dup2(fd, STDIN_FILENO);
+      if (dup2(fd, STDIN_FILENO) == -1) {
+        perror("dup2 failed");
+        close(fd);
+        exit(1);
+      }
     } else if (mode == 5) { // 2>
       fd = open(args2[0], O_WRONLY | O_CREAT | O_TRUNC, 0644);
       if (fd == -1) {
         perror("Open failed");
         exit(1);
       }
-      dup2(fd, STDERR_FILENO);
+      if (dup2(fd, STDERR_FILENO) == -1) {
+        perror("dup2 failed");
+        close(fd);
+        exit(1);
+      }
     }
 
     close(fd);
@@ -173,21 +200,43 @@ int execute_pipeline(char **args1, char **args2) {
   pid_t pid1 = fork();
   if (pid1 == 0) {
     close(pipefd[0]);
-    dup2(pipefd[1], STDOUT_FILENO); // replace stdout with write end
+    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+      perror("dup2 failed");
+      exit(1);
+    }
     close(pipefd[1]);
+    restore_child_signals();
     execvp(args1[0], args1);
     perror("exec 1 failed");
     exit(1);
+  }
+  if (pid1 == -1) {
+    perror("fork failed");
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return 1;
   }
 
   pid_t pid2 = fork();
   if (pid2 == 0) {
     close(pipefd[1]);
-    dup2(pipefd[0], STDIN_FILENO); // replace stdin with read
+    if (dup2(pipefd[0], STDIN_FILENO) == -1) {
+      perror("dup2 failed");
+      exit(1);
+    }
     close(pipefd[0]);
+    restore_child_signals();
     execvp(args2[0], args2);
     perror("exec 2 failed");
     exit(1);
+  }
+  if (pid2 == -1) {
+    perror("fork failed");
+    close(pipefd[0]);
+    close(pipefd[1]);
+    kill(pid1, SIGTERM);
+    waitpid(pid1, NULL, 0);
+    return 1;
   }
 
   close(pipefd[0]);

@@ -29,11 +29,13 @@ void alias_set(const char *name, const char *cmd) {
 
   while (current != NULL) {
     if (strcmp(current->name, name) == 0) {
+      char *new_cmd = strdup(cmd);
+      if (new_cmd == NULL) {
+        perror("strdup failed");
+        return;
+      }
       free(current->cmd);
-      // what strdup does
-      // new_node->name = malloc(strlen(name) + 1); // +1 for the \0 terminator
-      // strcpy(new_node->name, name);
-      current->cmd = strdup(cmd);
+      current->cmd = new_cmd;
       return;
     }
     current = current->next;
@@ -47,6 +49,13 @@ void alias_set(const char *name, const char *cmd) {
 
   new_node->name = strdup(name);
   new_node->cmd = strdup(cmd);
+  if (new_node->name == NULL || new_node->cmd == NULL) {
+    perror("strdup failed");
+    free(new_node->name);
+    free(new_node->cmd);
+    free(new_node);
+    return;
+  }
 
   new_node->next = head;
   head = new_node;

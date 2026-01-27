@@ -28,27 +28,64 @@ char **expand_globs(char **args) {
                         if (!temp) {
                             perror("realloc");
                             globfree(&glob_result);
+                            for (size_t k = 0; k < count; k++) free(expanded[k]);
                             free(expanded); 
                             return NULL;
                         }
                         expanded = temp;
                     }
-                    expanded[count++] = strdup(glob_result.gl_pathv[j]);
+                    char *dup = strdup(glob_result.gl_pathv[j]);
+                    if (!dup) {
+                        perror("strdup");
+                        globfree(&glob_result);
+                        for (size_t k = 0; k < count; k++) free(expanded[k]);
+                        free(expanded);
+                        return NULL;
+                    }
+                    expanded[count++] = dup;
                 }
             } else {
                 if (count >= capacity - 1) {
                         capacity *= 2;
-                        expanded = realloc(expanded, capacity * sizeof(char *));
+                        char **temp = realloc(expanded, capacity * sizeof(char *));
+                        if (!temp) {
+                            perror("realloc");
+                            for (size_t k = 0; k < count; k++) free(expanded[k]);
+                            free(expanded);
+                            return NULL;
+                        }
+                        expanded = temp;
                 }
-                expanded[count++] = strdup(args[i]);
+                char *dup = strdup(args[i]);
+                if (!dup) {
+                    perror("strdup");
+                    for (size_t k = 0; k < count; k++) free(expanded[k]);
+                    free(expanded);
+                    return NULL;
+                }
+                expanded[count++] = dup;
             }
             globfree(&glob_result);
         } else {
             if (count >= capacity - 1) {
                 capacity *= 2;
-                expanded = realloc(expanded, capacity * sizeof(char *));
+                char **temp = realloc(expanded, capacity * sizeof(char *));
+                if (!temp) {
+                    perror("realloc");
+                    for (size_t k = 0; k < count; k++) free(expanded[k]);
+                    free(expanded);
+                    return NULL;
+                }
+                expanded = temp;
             }
-            expanded[count++] = strdup(args[i]);
+            char *dup = strdup(args[i]);
+            if (!dup) {
+                perror("strdup");
+                for (size_t k = 0; k < count; k++) free(expanded[k]);
+                free(expanded);
+                return NULL;
+            }
+            expanded[count++] = dup;
         }
     }
     

@@ -18,6 +18,11 @@ int add_job(pid_t pid, JobStatus status, const char *command) {
     new_job->pid = pid;
     new_job->status = status;
     new_job->command = strdup(command);
+    if (!new_job->command) {
+        perror("strdup");
+        free(new_job);
+        return -1;
+    }
     new_job->next = NULL;
 
     if (job_list == NULL) {

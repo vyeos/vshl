@@ -140,8 +140,14 @@ int handle_builtin(char **args, int *status_out) {
 
   if (strcmp(args[0], "cd") == 0) {
     char *t_dir = args[1];
-    if (!t_dir)
+    if (!t_dir) {
       t_dir = getenv("HOME");
+      if (!t_dir) {
+        fprintf(stderr, "cd: HOME not set\n");
+        *status_out = 1;
+        return 1;
+      }
+    }
     if (chdir(t_dir) == -1) {
       perror("cd failed");
       *status_out = 1;
@@ -159,11 +165,16 @@ int handle_builtin(char **args, int *status_out) {
 
   if (strcmp(args[0], "fg") == 0) {
     if (!args[1]) {
-      printf("Usage: fg <job_id>\n");
+      fprintf(stderr, "Usage: fg <job_id>\n");
       *status_out = 1;
       return 1;
     }
     int id = atoi(args[1]);
+    if (id <= 0) {
+      fprintf(stderr, "fg: invalid job id: %s\n", args[1]);
+      *status_out = 1;
+      return 1;
+    }
     Job *job = find_job_by_id(id);
     if (!job) {
       printf("fg: job not found: %s\n", args[1]);

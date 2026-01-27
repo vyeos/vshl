@@ -18,6 +18,32 @@ Input -> Check for logic chains -> Split on them -> builtins (if possible) -> sp
 [-] startup config
 [-] raw mode (cmd his, tab autocomplete) 
 
+# Security & Hardening
+
+All identified vulnerabilities have been fixed:
+
+## Memory Safety
+- **Buffer Overflow Protection**: Fixed unsafe `strncat` usage in command buffer construction
+- **NULL Pointer Checks**: Added NULL checks for all `strdup()`, `malloc()`, and `realloc()` return values
+- **Memory Leak Prevention**: Proper cleanup on allocation failures in alias, globbing, and job management
+- **Bounds Checking**: All buffer operations now validate sizes before writing
+
+## System Call Hardening
+- **Error Handling**: Added error checks for `dup2()`, `fork()`, `kill()`, and `open()` calls
+- **File Descriptor Leaks**: Proper cleanup of file descriptors on error paths
+- **Signal Safety**: Child processes properly restore signal handlers before `exec()`
+
+## Input Validation
+- **Environment Variables**: NULL checks for `HOME` and other environment variables
+- **Job IDs**: Validation of numeric inputs to prevent invalid memory access
+- **Path Validation**: Safe handling of directory changes and file operations
+- **Array Bounds**: Parse line properly validates array indices
+
+## Process Management
+- **Zombie Prevention**: Proper error handling in pipeline fork failures
+- **Signal Handling**: Safe signal handler implementation using `sig_atomic_t`
+- **Process Cleanup**: Orphaned processes properly terminated on errors
+
 ## Startup config: ~/.vshlrc
 
 On first launch, vshl creates `~/.vshlrc` if it doesn't exist, and sources it on every startup.
